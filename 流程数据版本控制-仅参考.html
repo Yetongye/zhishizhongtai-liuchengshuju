@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>版本管理与并发控制演示</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .timeline-line { position: absolute; left: 15px; top: 24px; bottom: 0; width: 2px; background: #e2e8f0; z-index: 0; }
+        .modal-overlay { background-color: rgba(0, 0, 0, 0.5); }
+    </style>
+</head>
+<body class="bg-gray-100 h-screen overflow-hidden flex flex-col">
+
+    <div id="lockBanner" class="bg-orange-50 border-b border-orange-200 text-orange-800 px-4 py-2 text-sm flex items-center justify-between hidden">
+        <div class="flex items-center gap-2">
+            <i class="fa-solid fa-lock text-orange-600"></i>
+            <span><strong>当前只读模式：</strong> 成员 [张三 (Algorithm)] 正在编辑此SOP，为防止冲突，您暂时无法修改。</span>
+        </div>
+        <button onclick="unlockMode()" class="text-orange-600 underline hover:text-orange-800 text-xs">强制接管 (管理员)</button>
+    </div>
+
+    <header class="bg-white border-b border-gray-200 h-14 flex items-center justify-between px-4 shadow-sm">
+        <div class="flex items-center gap-4">
+            <div class="font-bold text-gray-700">知识校验工作台</div>
+            
+            <button onclick="openHistoryDrawer()" class="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs transition-colors border border-blue-200">
+                <i class="fa-solid fa-code-branch"></i>
+                <span class="font-bold">V1.2.3</span>
+                <span class="w-1 h-1 bg-gray-400 rounded-full"></span>
+                <span class="text-gray-500 font-normal">草稿中 (Draft)</span>
+            </button>
+        </div>
+
+        <div class="flex gap-3">
+            <button class="px-4 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded">保存草稿</button>
+            <button onclick="openPublishModal()" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm shadow font-medium">
+                <i class="fa-solid fa-paper-plane mr-1"></i> 发布上线
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-1 flex items-center justify-center text-gray-400 bg-slate-50 relative">
+        <div class="text-center">
+            <i class="fa-solid fa-layer-group text-4xl mb-2"></i>
+            <p>SOP 流程图编辑器区域</p>
+        </div>
+    </main>
+
+    <div id="publishModal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 modal-overlay backdrop-blur-sm" onclick="closePublishModal()"></div>
+        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-2xl w-[500px] overflow-hidden animate-fade-in-up">
+            
+            <div class="bg-gray-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 class="font-bold text-gray-800">发布新版本</h3>
+                <span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded border border-green-200">Ready to Ship</span>
+            </div>
+
+            <div class="p-6 space-y-4">
+                <div class="flex items-center gap-4 text-sm">
+                    <div class="text-gray-500 line-through">V1.2.3</div>
+                    <i class="fa-solid fa-arrow-right text-gray-400"></i>
+                    <div class="text-blue-600 font-bold text-lg bg-blue-50 px-2 rounded border border-blue-100">V1.2.4</div>
+                    <span class="text-xs text-gray-400 ml-auto">自动生成 (Patch)</span>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">更新摘要 <span class="text-red-500">*</span></label>
+                    <textarea class="w-full border border-gray-300 rounded p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none h-24" placeholder="简要描述本次修改的内容，如：新增了“货物丢失”场景的判别逻辑..."></textarea>
+                </div>
+
+                <div class="bg-yellow-50 text-yellow-800 text-xs p-3 rounded flex gap-2 items-start">
+                    <i class="fa-solid fa-circle-info mt-0.5"></i>
+                    <div>发布后将覆盖线上旧版本，并同步推送至 Echo+ 平台。其他协作者将基于此版本进行后续开发。</div>
+                </div>
+            </div>
+
+            <div class="bg-gray-50 px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
+                <button onclick="closePublishModal()" class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">取消</button>
+                <button onclick="closePublishModal(); alert('发布成功！')" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium shadow">确认发布</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="historyOverlay" onclick="closeHistoryDrawer()" class="fixed inset-0 bg-black/20 z-40 hidden"></div>
+    <div id="historyDrawer" class="fixed top-0 right-0 h-full w-[400px] bg-white shadow-2xl z-50 transform translate-x-full transition-transform duration-300 flex flex-col">
+        
+        <div class="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+            <h3 class="font-bold text-gray-800"><i class="fa-solid fa-clock-rotate-left mr-2 text-gray-500"></i>版本历史</h3>
+            <button onclick="closeHistoryDrawer()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-6 relative">
+            <div class="space-y-8 relative">
+                <div class="timeline-line"></div>
+
+                <div class="relative pl-8">
+                    <div class="absolute left-0 top-1 w-8 h-8 flex items-center justify-center bg-white z-10">
+                        <div class="w-3 h-3 bg-blue-500 rounded-full ring-4 ring-blue-100"></div>
+                    </div>
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                        <div class="flex justify-between items-start mb-1">
+                            <span class="font-bold text-blue-700 text-sm">V1.2.3 (Current Draft)</span>
+                            <span class="text-[10px] text-gray-500">刚刚</span>
+                        </div>
+                        <p class="text-xs text-gray-600 mb-2">正在编辑中，尚未发布...</p>
+                        <div class="text-[10px] text-gray-400 flex items-center gap-1">
+                            <div class="w-4 h-4 bg-gray-300 rounded-full flex items-center justify-center text-white font-bold text-[8px]">我</div>
+                            <span>By You</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="relative pl-8 group">
+                    <div class="absolute left-0 top-1 w-8 h-8 flex items-center justify-center bg-white z-10">
+                        <div class="w-2.5 h-2.5 bg-gray-300 rounded-full group-hover:bg-gray-500 transition-colors"></div>
+                    </div>
+                    <div class="border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow bg-white">
+                        <div class="flex justify-between items-start mb-1">
+                            <span class="font-bold text-gray-700 text-sm">V1.2.2</span>
+                            <span class="text-[10px] text-gray-400">2025-11-20 14:30</span>
+                        </div>
+                        <p class="text-xs text-gray-600 mb-3 line-clamp-2">修正了“催派”场景下的SOP话术语气，调整了判断节点的阈值参数。</p>
+                        
+                        <div class="flex justify-between items-end">
+                            <div class="text-[10px] text-gray-400 flex items-center gap-1">
+                                <div class="w-4 h-4 bg-purple-500 rounded-full flex items-center justify-center text-white font-bold text-[8px]">李</div>
+                                <span>By 李四</span>
+                            </div>
+                            <button class="px-2 py-1 bg-white border border-gray-300 hover:border-red-400 hover:text-red-600 rounded text-xs transition-colors shadow-sm">
+                                <i class="fa-solid fa-rotate-left mr-1"></i> 回刷至此
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="relative pl-8 group">
+                    <div class="absolute left-0 top-1 w-8 h-8 flex items-center justify-center bg-white z-10">
+                        <div class="w-2.5 h-2.5 bg-gray-300 rounded-full group-hover:bg-gray-500 transition-colors"></div>
+                    </div>
+                    <div class="border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow bg-white opacity-80">
+                        <div class="flex justify-between items-start mb-1">
+                            <span class="font-bold text-gray-700 text-sm">V1.2.1</span>
+                            <span class="text-[10px] text-gray-400">2025-11-18 09:15</span>
+                        </div>
+                        <p class="text-xs text-gray-600 mb-3">初始化版本导入。</p>
+                        <div class="flex justify-between items-end">
+                             <div class="text-[10px] text-gray-400 flex items-center gap-1">
+                                <div class="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-[8px]">我</div>
+                                <span>By You</span>
+                            </div>
+                            <button class="px-2 py-1 bg-white border border-gray-300 hover:border-red-400 hover:text-red-600 rounded text-xs transition-colors shadow-sm">
+                                <i class="fa-solid fa-rotate-left mr-1"></i> 回刷至此
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 模拟并发锁演示
+        setTimeout(() => {
+            // document.getElementById('lockBanner').classList.remove('hidden');
+        }, 1000);
+
+        function unlockMode() {
+            document.getElementById('lockBanner').classList.add('hidden');
+        }
+
+        // 弹窗控制
+        function openPublishModal() {
+            document.getElementById('publishModal').classList.remove('hidden');
+        }
+        function closePublishModal() {
+            document.getElementById('publishModal').classList.add('hidden');
+        }
+
+        // 抽屉控制
+        const drawer = document.getElementById('historyDrawer');
+        const overlay = document.getElementById('historyOverlay');
+
+        function openHistoryDrawer() {
+            overlay.classList.remove('hidden');
+            drawer.classList.remove('translate-x-full');
+        }
+
+        function closeHistoryDrawer() {
+            drawer.classList.add('translate-x-full');
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+            }, 300);
+        }
+    </script>
+</body>
+</html>

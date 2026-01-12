@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOP 列表管理 - 知识中台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+        
+        /* 自定义滚动条 */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+
+        /* 表格行 Hover 效果增强 */
+        .table-row-hover:hover { background-color: #f8fafc; }
+
+        /* 状态标签样式 */
+        .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; }
+        .badge-gray { background-color: #f3f4f6; color: #4b5563; border: 1px solid #e5e7eb; }
+        .badge-green { background-color: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+        .badge-blue { background-color: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+        .badge-yellow { background-color: #fefce8; color: #854d0e; border: 1px solid #fef08a; }
+        .badge-red { background-color: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+        .badge-purple { background-color: #faf5ff; color: #6b21a8; border: 1px solid #e9d5ff; }
+    </style>
+    <style>
+        /* Custom Select Styles */
+        .custom-select {
+            position: relative;
+            user-select: none;
+        }
+        .custom-select-trigger {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 12px;
+            font-size: 14px;
+            font-weight: 400;
+            color: #6b7280;
+            height: 38px;
+            line-height: 38px;
+            background: #fff;
+            cursor: pointer;
+            border: 1px solid #d1d5db;
+            border-radius: 0.25rem; /* rounded */
+            transition: all 0.2s;
+        }
+        .custom-select-trigger:hover {
+            border-color: #9ca3af;
+        }
+        .custom-select:focus .custom-select-trigger,
+        .custom-select.open .custom-select-trigger {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 1px #3b82f6;
+        }
+        .custom-options {
+            position: absolute;
+            display: block;
+            top: 100%;
+            left: 0;
+            right: 0;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.375rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            background: #fff;
+            transition: all 0.2s;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            z-index: 50;
+            transform: translateY(-10px);
+            margin-top: 4px;
+        }
+        .custom-select.open .custom-options {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: all;
+            transform: translateY(0);
+        }
+        .custom-option {
+            position: relative;
+            display: block;
+            padding: 8px 12px;
+            font-size: 14px;
+            font-weight: 400;
+            color: #374151;
+            line-height: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .custom-option:hover {
+            background-color: #f3f4f6;
+            color: #111827;
+        }
+        .custom-option.selected {
+            color: #2563eb;
+            background-color: #eff6ff;
+            font-weight: 500;
+        }
+        .custom-arrow {
+            transition: transform 0.2s;
+        }
+        .custom-select.open .custom-arrow {
+            transform: rotate(180deg);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 h-screen flex flex-col overflow-hidden">
+
+    <header class="bg-white border-b border-gray-200 h-14 flex items-center justify-between px-6 shadow-sm z-20 flex-shrink-0 relative">
+        <!-- Left: Title/Logo -->
+        <div class="flex items-center gap-6">
+            <span class="font-bold text-lg text-gray-700">知识中台</span>
+        </div>
+        
+        <!-- Center: Navigation -->
+        <div class="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
+            <nav class="flex items-center gap-2 text-sm font-medium text-gray-600">
+                <a href="#" class="px-3 py-2 hover:bg-gray-100 hover:text-gray-900 rounded-md transition-colors">知识检索</a>
+                <a href="#" class="px-3 py-2 hover:bg-gray-100 hover:text-gray-900 rounded-md transition-colors">知识消费</a>
+                <div class="relative group">
+                    <button class="flex items-center gap-1 px-3 py-2 hover:bg-gray-100 hover:text-gray-900 rounded-md transition-colors">
+                        知识生产 <i class="fa-solid fa-chevron-down text-xs scale-75 opacity-70"></i>
+                    </button>
+                </div>
+                <div class="relative group">
+                    <button class="flex items-center gap-1 px-3 py-2 hover:bg-gray-100 hover:text-gray-900 rounded-md transition-colors">
+                        知识管理 <i class="fa-solid fa-chevron-down text-xs scale-75 opacity-70"></i>
+                    </button>
+                </div>
+                <a href="#" class="px-3 py-2 hover:bg-gray-100 hover:text-gray-900 rounded-md transition-colors">系统管理</a>
+                <a href="#" class="px-3 py-2 bg-blue-50 text-blue-600 rounded-md transition-colors font-bold">流程数据</a>
+            </nav>
+        </div>
+
+        <!-- Right: User Profile -->
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-gray-200 overflow-hidden border border-gray-300">
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="User">
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 overflow-y-auto p-6">
+        
+        <div class="bg-white p-5 rounded-lg shadow-sm mb-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 mb-1">SOP ID</label>
+                    <div class="relative">
+                        <input type="text" placeholder="请输入SOP ID" class="w-full pl-3 pr-8 py-2 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-500 outline-none transition-shadow">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 mb-1">场景名称</label>
+                    <input type="text" placeholder="请输入场景 (如: 未到站-常规催派)" class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-500 outline-none">
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <label class="text-xs font-bold text-gray-700 whitespace-nowrap">审核状态</label>
+                    <div class="relative w-full custom-select" tabindex="0">
+                        <div class="custom-select-trigger w-full px-3 py-2 border border-gray-300 rounded text-sm text-gray-500 outline-none">
+                            <span>请选择审核状态</span>
+                            <i class="fa-solid fa-chevron-down text-xs text-gray-400 custom-arrow"></i>
+                        </div>
+                        <div class="custom-options">
+                            <div class="custom-option" data-value="generating">生成中</div>
+                            <div class="custom-option" data-value="pending">待审核</div>
+                            <div class="custom-option" data-value="processing">处理中</div>
+                            <div class="custom-option" data-value="audited">已审核</div>
+                            <div class="custom-option" data-value="failed">生成失败</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex gap-3 items-end">
+                    <div class="flex-1 flex items-center gap-3">
+                         <label class="text-xs font-bold text-gray-700 whitespace-nowrap">推送状态</label>
+                        <div class="relative w-full custom-select" tabindex="0">
+                            <div class="custom-select-trigger w-full px-3 py-2 border border-gray-300 rounded text-sm text-gray-500 outline-none">
+                                <span>请选择推送状态</span>
+                                <i class="fa-solid fa-chevron-down text-xs text-gray-400 custom-arrow"></i>
+                            </div>
+                            <div class="custom-options">
+                                <div class="custom-option" data-value="pushed">已推送</div>
+                                <div class="custom-option" data-value="unpushed">未推送</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                         <button class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded text-sm font-medium transition-colors">重置</button>
+                        <button class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium shadow transition-colors">查询</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            
+            <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50/50">
+                <div class="flex items-center gap-3">
+                    <h2 class="font-bold text-gray-800 text-lg">SOP列表</h2>
+                </div>
+                <div class="flex gap-3">
+                    <button class="flex items-center gap-2 px-4 py-2 bg-white border border-blue-600 text-blue-600 hover:bg-blue-50 rounded text-sm font-medium transition-colors">
+                        <i class="fa-solid fa-cloud-arrow-up"></i> 推送
+                    </button>
+                    <button onclick="window.location.href='流程数据校验页.html'" class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium shadow">
+                        <i class="fa-solid fa-plus"></i> 校验
+                    </button>
+                    <div class="flex gap-1">
+                        <button class="w-8 h-8 rounded-full hover:bg-gray-100 text-gray-500"><i class="fa-solid fa-rotate-right"></i></button>
+                        <button class="w-8 h-8 rounded-full hover:bg-gray-100 text-gray-500"><i class="fa-solid fa-expand"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider border-b border-gray-200">
+                            <th class="px-6 py-4 font-semibold w-12">
+                                <input type="checkbox" class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer">
+                            </th>
+                            <th class="px-6 py-4 font-semibold">ID</th>
+                            <th class="px-6 py-4 font-semibold">场景</th>
+                            <th class="px-6 py-4 font-semibold">审核状态</th>
+                            <th class="px-6 py-4 font-semibold">推送状态</th>
+                            <th class="px-6 py-4 font-semibold">更新时间</th>
+                            <th class="px-6 py-4 font-semibold text-right">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-sm divide-y divide-gray-100">
+
+                        <tr class="table-row-hover bg-white transition-colors">
+                            <td class="px-6 py-4">
+                                <input type="checkbox" class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer">
+                            </td>
+                            <td class="px-6 py-4 font-mono text-gray-600">sop_20260112_001</td>
+                            <td class="px-6 py-4 font-medium text-gray-800">未到站-常规催派送</td>
+                            <td class="px-6 py-4">
+                                <span class="badge badge-green">已审核</span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="badge badge-gray">未推送</span>
+                            </td>
+                            <td class="px-6 py-4 text-gray-500">2026-01-12 10:30:00</td>
+                            <td class="px-6 py-4 text-right space-x-3">
+                                <button onclick="window.location.href='流程数据校验页.html'" class="text-blue-600 hover:text-blue-800 font-medium hover:underline">校验</button>
+                                <button class="text-blue-600 hover:text-blue-800 font-medium hover:underline">重新生成</button>
+                                <button class="text-red-500 hover:text-red-700 font-medium hover:underline">删除</button>
+                            </td>
+                        </tr>
+
+                        <tr class="table-row-hover bg-purple-50/30 transition-colors">
+                            <td class="px-6 py-4">
+                                <input type="checkbox" class="w-4 h-4 text-gray-300 rounded border-gray-300 cursor-not-allowed bg-gray-100" disabled>
+                            </td>
+                            <td class="px-6 py-4 font-mono text-gray-600">sop_20260112_002</td>
+                            <td class="px-6 py-4 font-medium text-gray-800">包裹丢失-理赔引导</td>
+                            <td class="px-6 py-4">
+                                <div class="flex flex-col">
+                                    <span class="badge badge-purple mb-1 w-fit">处理中</span>
+                                    <span class="text-[10px] text-purple-600">处理人：yezitong.1</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="badge badge-gray">未推送</span>
+                            </td>
+                            <td class="px-6 py-4 text-gray-500">2026-01-12 09:15:00</td>
+                            <td class="px-6 py-4 text-right space-x-3">
+                                <button class="text-gray-400 cursor-not-allowed font-medium" disabled>校验</button>
+                                <button class="text-gray-400 cursor-not-allowed font-medium" disabled>重新生成</button>
+                                <button class="text-gray-400 cursor-not-allowed font-medium" disabled>删除</button>
+                            </td>
+                        </tr>
+
+                        <tr class="bg-gray-50/80">
+                            <td class="px-6 py-4">
+                                <input type="checkbox" class="w-4 h-4 text-gray-300 rounded border-gray-300 cursor-not-allowed bg-gray-100" disabled>
+                            </td>
+                            <td class="px-6 py-4 font-mono text-gray-400">sop_20260112_003</td>
+                            <td class="px-6 py-4 font-medium text-gray-500">破损-外包装破损</td>
+                            <td class="px-6 py-4">
+                                <span class="badge badge-blue">生成中</span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="badge badge-gray">未推送</span>
+                            </td>
+                            <td class="px-6 py-4 text-gray-400">-</td>
+                            <td class="px-6 py-4 text-right space-x-3">
+                                <button class="text-gray-400 cursor-not-allowed font-medium" disabled>校验</button>
+                                <button class="text-gray-400 cursor-not-allowed font-medium" disabled>重新生成</button>
+                                <button class="text-gray-400 cursor-not-allowed font-medium" disabled>删除</button>
+                            </td>
+                        </tr>
+
+                        <tr class="table-row-hover bg-white transition-colors">
+                            <td class="px-6 py-4">
+                                <input type="checkbox" class="w-4 h-4 text-gray-300 rounded border-gray-300 cursor-not-allowed bg-gray-100" disabled>
+                            </td>
+                            <td class="px-6 py-4 font-mono text-gray-600">sop_20260111_089</td>
+                            <td class="px-6 py-4 font-medium text-gray-800">地址修改-同城转寄</td>
+                            <td class="px-6 py-4">
+                                <span class="badge badge-green">已审核</span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="badge badge-green">已推送</span>
+                            </td>
+                            <td class="px-6 py-4 text-gray-500">2026-01-11 15:20:00</td>
+                            <td class="px-6 py-4 text-right space-x-3">
+                                <button onclick="window.location.href='流程数据校验页.html'" class="text-blue-600 hover:text-blue-800 font-medium hover:underline">校验</button>
+                                <button class="text-blue-600 hover:text-blue-800 font-medium hover:underline">重新生成</button>
+                                <button class="text-red-500 hover:text-red-700 font-medium hover:underline">删除</button>
+                            </td>
+                        </tr>
+
+                        <tr class="table-row-hover bg-white transition-colors">
+                            <td class="px-6 py-4">
+                                <input type="checkbox" class="w-4 h-4 text-gray-300 rounded border-gray-300 cursor-not-allowed bg-gray-100" disabled>
+                            </td>
+                            <td class="px-6 py-4 font-mono text-gray-600">sop_20260112_005</td>
+                            <td class="px-6 py-4 font-medium text-gray-800">投诉-虚假签收</td>
+                            <td class="px-6 py-4">
+                                <span class="badge badge-red">生成失败</span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="badge badge-gray">未推送</span>
+                            </td>
+                            <td class="px-6 py-4 text-gray-500">2026-01-12 08:00:00</td>
+                            <td class="px-6 py-4 text-right space-x-3">
+                                <button onclick="window.location.href='流程数据校验页.html'" class="text-blue-600 hover:text-blue-800 font-medium hover:underline">校验</button>
+                                <button class="text-blue-600 hover:text-blue-800 font-medium hover:underline">重新生成</button>
+                                <button class="text-red-500 hover:text-red-700 font-medium hover:underline">删除</button>
+                            </td>
+                        </tr>
+
+                         <tr class="table-row-hover bg-white transition-colors">
+                            <td class="px-6 py-4">
+                                <input type="checkbox" class="w-4 h-4 text-gray-300 rounded border-gray-300 cursor-not-allowed bg-gray-100" disabled>
+                            </td>
+                            <td class="px-6 py-4 font-mono text-gray-600">sop_20260112_006</td>
+                            <td class="px-6 py-4 font-medium text-gray-800">费用争议-多收运费</td>
+                            <td class="px-6 py-4">
+                                <span class="badge badge-yellow">待审核</span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="badge badge-gray">未推送</span>
+                            </td>
+                            <td class="px-6 py-4 text-gray-500">2026-01-12 11:00:00</td>
+                            <td class="px-6 py-4 text-right space-x-3">
+                                <button class="text-blue-600 hover:text-blue-800 font-medium hover:underline">校验</button>
+                                <button class="text-blue-600 hover:text-blue-800 font-medium hover:underline">重新生成</button>
+                                <button class="text-red-500 hover:text-red-700 font-medium hover:underline">删除</button>
+                            </td>
+                        </tr>
+
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="px-6 py-4 border-t border-gray-200 flex justify-between items-center bg-gray-50">
+                <div class="text-sm text-gray-500 border border-gray-300 rounded px-2 py-1 bg-white">
+                    10条/页 <i class="fa-solid fa-chevron-down ml-1 text-xs"></i>
+                </div>
+                <div class="flex gap-2 text-sm">
+                    <button class="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-200 text-gray-500"><i class="fa-solid fa-chevron-left"></i></button>
+                    <button class="w-8 h-8 flex items-center justify-center rounded bg-blue-600 text-white font-medium shadow-sm">1</button>
+                    <button class="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-200 text-gray-600">2</button>
+                    <button class="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-200 text-gray-600">3</button>
+                    <span class="flex items-center justify-center w-8 text-gray-400">...</span>
+                    <button class="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-200 text-gray-600">23</button>
+                    <button class="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-200 text-gray-500"><i class="fa-solid fa-chevron-right"></i></button>
+                    <span class="flex items-center ml-2 text-gray-500">前往 <input type="text" class="w-8 h-6 border border-gray-300 rounded mx-1 text-center" value="1"> 页</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('click', function(e) {
+            // Check if clicked outside
+            if (!e.target.closest('.custom-select')) {
+                document.querySelectorAll('.custom-select').forEach(s => s.classList.remove('open'));
+                return;
+            }
+            
+            const select = e.target.closest('.custom-select');
+            const trigger = e.target.closest('.custom-select-trigger');
+            
+            // Toggle
+            if (trigger) {
+                const isOpen = select.classList.contains('open');
+                // Close others
+                document.querySelectorAll('.custom-select').forEach(s => {
+                    if (s !== select) s.classList.remove('open');
+                });
+                
+                if (isOpen) {
+                    select.classList.remove('open');
+                } else {
+                    select.classList.add('open');
+                }
+            }
+            
+            // Select Option
+            const option = e.target.closest('.custom-option');
+            if (option) {
+                const wrapper = option.closest('.custom-select');
+                const triggerText = wrapper.querySelector('.custom-select-trigger span');
+                const value = option.dataset.value;
+                
+                // Update text
+                triggerText.textContent = option.textContent;
+                triggerText.classList.remove('text-gray-500');
+                triggerText.classList.add('text-gray-800');
+                
+                // Update selected
+                wrapper.querySelectorAll('.custom-option').forEach(o => o.classList.remove('selected'));
+                option.classList.add('selected');
+                
+                // Close
+                wrapper.classList.remove('open');
+            }
+        });
+    </script>
+</body>
+</html>

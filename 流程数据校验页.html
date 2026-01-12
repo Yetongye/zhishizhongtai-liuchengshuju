@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>知识中台 - SOP 校验工作台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* 自定义样式补充 */
+        body { font-family: 'Inter', system-ui, sans-serif; overflow: hidden; }
+        
+        /* 滚动条美化 */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+
+        /* 连接线模拟 */
+        .connector-v { position: absolute; width: 2px; background-color: #cbd5e1; z-index: 0; }
+        .connector-h { position: absolute; height: 2px; background-color: #cbd5e1; z-index: 0; }
+
+        /* 节点基础样式 */
+        .node-card {
+            position: absolute;
+            width: 180px;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            transition: all 0.2s;
+            z-index: 10;
+            background: white;
+        }
+
+        /* 1. 左屏：旧版本 (置灰) [Source: 160] */
+        .pane-history { 
+            background-color: #f3f4f6; 
+            border-right: 1px solid #e5e7eb;
+        }
+        .node-old {
+            border: 1px solid #d1d5db;
+            color: #6b7280;
+            filter: grayscale(100%);
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        /* 2. 右屏：新版本 (高亮) [Source: 161] */
+        .pane-new {
+            background-color: #ffffff;
+            background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        /* 节点状态颜色 [Source: 162, 163, 164] */
+        .node-new { /* 新增: 绿色 */
+            border: 2px solid #22c55e;
+            background-color: #f0fdf4;
+            color: #15803d;
+        }
+        .node-update { /* 更新: 蓝色 */
+            border: 2px solid #3b82f6;
+            background-color: #eff6ff;
+            color: #1e40af;
+        }
+        .node-unchanged { /* 未变: 白色/灰色 */
+            border: 1px solid #cbd5e1;
+            background-color: white;
+            color: #334155;
+        }
+
+        /* 删除按钮 (Hover显示) [Source: 171] */
+        .btn-delete {
+            position: absolute;
+            top: -8px; right: -8px;
+            width: 20px; height: 20px;
+            background: #ef4444; color: white;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 10px;
+            opacity: 0; transition: opacity 0.2s;
+            cursor: pointer;
+        }
+        .node-card:hover .btn-delete { opacity: 1; }
+
+        /* 抽屉动画 */
+        .drawer-panel { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .drawer-open { transform: translateX(0); }
+        .drawer-closed { transform: translateX(100%); }
+
+        /* Diff 高亮 [Source: 173] */
+        .diff-add { background-color: #dcfce7; color: #166534; text-decoration: underline decoration-green-500; }
+        
+        /* 侧边栏收起动画 */
+        .sidebar { transition: width 0.3s; }
+        .sidebar-collapsed { width: 0px; overflow: hidden; padding: 0; border: none; }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col text-slate-800">
+
+    <header class="bg-white border-b border-gray-200 h-14 flex items-center justify-between px-6 shadow-sm z-30 flex-shrink-0 relative">
+        <!-- Left: Title/Logo -->
+        <div class="flex items-center gap-6">
+            <span class="font-bold text-lg text-gray-700">知识中台</span>
+        </div>
+        
+        <!-- Center: Navigation -->
+        <div class="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
+            <nav class="flex items-center gap-2 text-sm font-medium text-gray-600">
+                <a href="#" class="px-3 py-2 hover:bg-gray-100 hover:text-gray-900 rounded-md transition-colors">知识检索</a>
+                <a href="#" class="px-3 py-2 hover:bg-gray-100 hover:text-gray-900 rounded-md transition-colors">知识消费</a>
+                <div class="relative group">
+                    <button class="flex items-center gap-1 px-3 py-2 hover:bg-gray-100 hover:text-gray-900 rounded-md transition-colors">
+                        知识生产 <i class="fa-solid fa-chevron-down text-xs scale-75 opacity-70"></i>
+                    </button>
+                </div>
+                <div class="relative group">
+                    <button class="flex items-center gap-1 px-3 py-2 hover:bg-gray-100 hover:text-gray-900 rounded-md transition-colors">
+                        知识管理 <i class="fa-solid fa-chevron-down text-xs scale-75 opacity-70"></i>
+                    </button>
+                </div>
+                <a href="#" class="px-3 py-2 hover:bg-gray-100 hover:text-gray-900 rounded-md transition-colors">系统管理</a>
+                <a href="#" class="px-3 py-2 bg-blue-50 text-blue-600 rounded-md transition-colors font-bold">流程数据</a>
+            </nav>
+        </div>
+
+        <!-- Right: User Profile -->
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-gray-200 overflow-hidden border border-gray-300">
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="User">
+            </div>
+        </div>
+    </header>
+
+    <div class="h-14 bg-white border-b border-gray-200 flex items-center justify-between px-4 z-20 flex-shrink-0">
+        <div class="flex items-center gap-4">
+            <button onclick="toggleSidebar()" class="text-gray-500 hover:bg-gray-100 p-2 rounded">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <h1 class="font-bold text-lg">知识校验工作台</h1>
+            <span class="text-sm text-gray-400">|</span>
+            <span class="text-sm text-gray-600">物流异常-停滞未更新-20251124</span>
+        </div>
+        <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2 bg-gray-100 rounded px-2 py-1">
+                <button class="text-xs hover:text-blue-600 p-1"><i class="fa-solid fa-minus"></i></button>
+                <span class="text-xs font-mono w-10 text-center">100%</span>
+                <button class="text-xs hover:text-blue-600 p-1"><i class="fa-solid fa-plus"></i></button>
+            </div>
+            <div class="flex items-center bg-gray-100 rounded overflow-hidden text-xs shadow-sm">
+                <button id="btnGraph" class="px-3 py-1 bg-blue-600 text-white">图谱视角</button>
+                <button id="btnText" class="px-3 py-1 text-gray-700 hover:bg-gray-200">文本视角</button>
+            </div>
+            <div class="relative">
+                <button id="exportBtn" class="px-3 py-1 text-sm bg-white border border-gray-300 rounded hover:bg-gray-50 flex items-center gap-1">
+                    <i class="fa-solid fa-download"></i> 导出 <i class="fa-solid fa-chevron-down text-xs"></i>
+                </button>
+                <div id="exportMenu" class="absolute right-0 mt-1 w-40 bg-white border border-gray-200 rounded shadow hidden text-sm">
+                    <button id="expTXT" class="w-full text-left px-3 py-2 hover:bg-gray-100">导出文本 (TXT)</button>
+                    <button id="expPNG" class="w-full text-left px-3 py-2 hover:bg-gray-100">导出Mermaid代码</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex flex-1 overflow-hidden relative">
+
+        <aside id="sidebar" class="sidebar w-64 bg-white border-r border-gray-200 flex flex-col z-10">
+            <div class="p-4 border-b border-gray-100 space-y-3">
+                <!-- 1. 审核状态 -->
+                <div>
+                    <label class="text-xs font-bold text-gray-500 block mb-1">审核状态</label>
+                    <select id="filterStatus" class="w-full h-8 border border-gray-300 rounded px-2 text-xs outline-none focus:border-blue-500 bg-white">
+                        <option value="all">全部场景</option>
+                        <option value="pending">待审核</option>
+                        <option value="reviewed">已审核</option>
+                    </select>
+                </div>
+                
+                <!-- 2. 搜索场景 -->
+                <div>
+                    <label class="text-xs font-bold text-gray-500 block mb-1">搜索场景</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-search absolute left-2.5 top-2 text-gray-400 text-xs"></i>
+                        <input id="searchScene" type="text" class="w-full h-8 border border-gray-300 rounded pl-8 pr-2 text-xs outline-none focus:border-blue-500" placeholder="输入关键字查找...">
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto">
+                <div class="group">
+                    <div class="px-4 py-2 bg-gray-50 text-xs font-bold text-gray-500 uppercase flex justify-between items-center sticky top-0 z-10 border-y border-gray-100">
+                        <span>物流异常列表</span>
+                        <div class="flex items-center gap-2">
+                            <label class="flex items-center gap-1 cursor-pointer font-normal text-gray-400 hover:text-blue-600">
+                                <input type="checkbox" id="selectAll" class="accent-blue-600 rounded">
+                                全选
+                            </label>
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </div>
+                    </div>
+                    
+                    <ul id="scenarioList" class="text-sm">
+                        <!-- Item 1: 已审核 -->
+                        <li data-title="已发车未到站" data-status="reviewed" class="px-3 py-3 border-b border-gray-50 hover:bg-gray-50 flex items-start gap-2 opacity-60">
+                            <input type="checkbox" class="scene-checkbox mt-1 accent-blue-600 rounded">
+                            <i class="fa-solid fa-circle-check text-green-500 mt-1"></i>
+                            <div>
+                                <div class="text-gray-900 line-through decoration-gray-400">已发车未到站</div>
+                                <div class="text-[10px] text-gray-400">更新时间: 2025-11-01 10:20</div>
+                            </div>
+                        </li>
+
+                        <!-- Item 2: 待审核 (Active) -->
+                        <li data-title="停滞未更新" data-status="pending" class="px-3 py-3 border-b border-gray-50 bg-blue-50 border-l-4 border-l-blue-500 flex items-start gap-2 cursor-pointer">
+                            <input type="checkbox" class="scene-checkbox mt-1 accent-blue-600 rounded">
+                            <div class="mt-1 w-3 h-3 rounded-full bg-yellow-400 border border-yellow-500 flex-shrink-0"></div>
+                            <div class="flex-1">
+                                <div class="font-bold text-gray-900">停滞未更新</div>
+                                <div class="text-[10px] text-gray-400">更新时间: 2025-11-24 15:20</div>
+
+                                <div class="text-[10px] text-blue-600 bg-blue-100 inline-block px-1 rounded mt-1">版本 V1.1</div>
+                            </div>
+                        </li>
+
+                        <!-- Item 3: 待审核 (Error) -->
+                        <li data-title="货物丢失/破损" data-status="pending" class="px-3 py-3 border-b border-gray-50 hover:bg-red-50 flex items-start gap-2 cursor-pointer">
+                            <input type="checkbox" class="scene-checkbox mt-1 accent-blue-600 rounded">
+                            <i class="fa-solid fa-circle-xmark text-red-500 mt-1"></i>
+                            <div>
+                                <div class="text-gray-900">货物丢失/破损</div>
+                                <div class="text-[10px] text-red-500">需重新生成</div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="p-3 border-t border-gray-200 bg-gray-50 text-center">
+                <button id="btnBatchPass" class="w-full py-2 bg-white border border-blue-200 text-blue-600 text-xs font-bold rounded shadow-sm hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                    批量通过本组 (0)
+                </button>
+            </div>
+        </aside>
+
+        <main class="flex-1 flex flex-col relative min-w-0">
+            <div class="absolute top-4 left-1/2 -translate-x-1/2 z-20 flex bg-white shadow rounded-lg border border-gray-200 p-1 text-xs">
+                <div class="px-3 py-1 bg-gray-100 text-gray-500 rounded-l border-r">V0 原版 2025-11-01</div>
+                <div class="px-3 py-1 bg-blue-50 text-blue-700 font-bold rounded-r">V1 新版 2025-11-24</div>
+            </div>
+
+            <div id="graphView" class="flex-1 flex overflow-hidden">
+                <div class="w-1/2 pane-history relative overflow-hidden">
+                    <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full h-full p-10 select-none">
+                        <div class="node-card node-old" style="top: 50px; left: 150px;">
+                            <div class="font-bold">用户进线</div>
+                            <div>咨询物流</div>
+                        </div>
+                        <div class="connector-v" style="top:100px; left:240px; height:50px;"></div>
+                        <div class="node-card node-old" style="top: 150px; left: 150px;">
+                            <div class="font-bold">判别状态</div>
+                            <div>通用逻辑</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="w-1/2 pane-new relative cursor-grab active:cursor-grabbing overflow-auto">
+                    <div class="absolute top-4 right-4 flex gap-3 text-[10px] z-10">
+                        <span class="flex items-center"><span class="w-2 h-2 bg-green-500 rounded-full mr-1"></span>新增</span>
+                        <span class="flex items-center"><span class="w-2 h-2 bg-blue-500 rounded-full mr-1"></span>更新</span>
+                    </div>
+
+                    <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full h-full p-10">
+                        
+                        <div class="node-card node-unchanged" style="top: 50px; left: 150px;">
+                            <div class="font-bold">用户进线</div>
+                            <div class="text-gray-500">咨询物流</div>
+                            <div class="btn-delete"><i class="fa-solid fa-minus"></i></div>
+                        </div>
+                        
+                        <div class="connector-v" style="top:100px; left:240px; height:50px;"></div>
+
+                        <div onclick="openDrawer()" class="node-card node-update cursor-pointer hover:shadow-lg hover:ring-2 hover:ring-blue-200" style="top: 150px; left: 150px;">
+                            <div class="flex justify-between">
+                                <span class="font-bold">判别状态</span>
+                                <span class="text-[10px] bg-blue-100 text-blue-700 px-1 rounded">Update</span>
+                            </div>
+                            <div class="mt-1 text-gray-700">是否超过24h且...</div>
+                            <div class="btn-delete"><i class="fa-solid fa-minus"></i></div>
+                        </div>
+
+                        <div class="connector-v" style="top:210px; left:240px; height:30px;"></div>
+                        <div class="connector-h" style="top:240px; left:120px; width:240px;"></div> <div class="connector-v" style="top:240px; left:120px; height:20px;"></div>
+                        <div class="connector-v" style="top:240px; left:360px; height:20px;"></div>
+
+                        <div onclick="openDrawer()" class="node-card node-new cursor-pointer hover:shadow-lg" style="top: 260px; left: 30px;">
+                            <div class="flex justify-between">
+                                <span class="font-bold">升级工单</span>
+                                <span class="text-[10px] bg-green-100 text-green-700 px-1 rounded">New</span>
+                            </div>
+                            <div class="mt-1 text-gray-700">触发赔付流程</div>
+                            <div class="btn-delete"><i class="fa-solid fa-minus"></i></div>
+                        </div>
+
+                        <div class="node-card node-unchanged" style="top: 260px; left: 270px;">
+                            <div class="font-bold">标准回复</div>
+                            <div class="text-gray-500">安抚并等待</div>
+                            <div class="btn-delete"><i class="fa-solid fa-minus"></i></div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <div id="textView" class="flex-1 overflow-hidden hidden bg-gray-50">
+                <div class="flex h-full">
+                    <!-- 左栏：原版 -->
+                    <div class="w-1/2 flex flex-col border-r border-gray-200">
+                        
+                        <div class="flex-1 overflow-y-auto p-4 space-y-4" id="textListOld">
+                            <!-- JS Generated -->
+                        </div>
+                    </div>
+                    
+                    <!-- 右栏：新版 -->
+                    <div class="w-1/2 flex flex-col bg-white">
+                        
+                        <div class="flex-1 overflow-y-auto p-4 space-y-4" id="textListNew">
+                            <!-- JS Generated -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <footer class="h-16 bg-white border-t border-gray-200 flex justify-between items-center px-6 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] z-20">
+                <div class="text-xs text-gray-500">
+                    上次更新: 2025-11-01 14:30 By yezitong.1
+                </div>
+                <div class="flex gap-3">
+                    <button class="px-5 py-2 border border-red-300 text-red-600 rounded hover:bg-red-50 font-medium transition-colors">
+                        驳回
+                    </button>
+                    <button class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium shadow transition-transform active:scale-95 flex items-center">
+                        <i class="fa-solid fa-check mr-2"></i> 校验通过 (下一个)
+                    </button>
+                </div>
+            </footer>
+        </main>
+
+        <div id="drawerOverlay" onclick="closeDrawer()" class="absolute inset-0 bg-black/20 z-30 hidden transition-opacity"></div>
+        <div id="drawerPanel" class="absolute right-0 top-0 bottom-0 w-[450px] bg-white shadow-2xl z-40 drawer-panel drawer-closed flex flex-col">
+            
+            <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <div>
+                    <h3 class="font-bold text-gray-800">节点编辑</h3>
+                    <p class="text-xs text-blue-600">判别状态 (Updated)</p>
+                </div>
+                <button onclick="closeDrawer()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-5 space-y-6">
+                
+                
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">节点规则</label>
+                    <div class="w-full border border-blue-200 rounded p-3 text-sm bg-blue-50/20 leading-relaxed" contenteditable="true">
+                        1. 运单状态必须为“运输中”或“异常”；<br>
+                        2. <span class="diff-add" title="新增内容">最近一条物流更新时间 > 24小时</span>；<br>
+                        3. 非偏远地区订单。
+                    </div>
+                    <p class="text-[10px] text-gray-400 mt-1 text-right">*绿色背景为新增逻辑</p>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">执行思路</label>
+                    <textarea class="w-full border border-gray-300 rounded p-2 text-sm h-20 outline-none focus:border-blue-500">调用物流轨迹API，获取 latest_timestamp，与当前时间做差值计算。</textarea>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">参考话术</label>
+                    <div class="border border-gray-300 rounded overflow-hidden">
+                         <div class="bg-gray-100 px-2 py-1 border-b border-gray-200 flex gap-2">
+                             <button class="p-1 hover:bg-gray-200 rounded"><i class="fa-solid fa-bold text-xs"></i></button>
+                             <span class="text-[10px] text-gray-400 self-center">富文本编辑</span>
+                         </div>
+                         <textarea class="w-full p-2 text-sm h-24 outline-none resize-none">亲，查看到您的包裹在【北京分拨中心】停留超过24小时，这确实不正常。我马上为您升级工单处理。</textarea>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="p-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3">
+                <button onclick="closeDrawer()" class="px-4 py-2 text-sm text-gray-600 hover:bg-gray-200 rounded">取消</button>
+                <button onclick="closeDrawer()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded shadow-sm">
+                    保存修改
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // 侧边栏收起逻辑 [Source: 156]
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('sidebar-collapsed');
+        }
+
+        // 抽屉开闭逻辑 [Source: 175]
+        function openDrawer() {
+            document.getElementById('drawerOverlay').classList.remove('hidden');
+            document.getElementById('drawerPanel').classList.remove('drawer-closed');
+            document.getElementById('drawerPanel').classList.add('drawer-open');
+        }
+
+        function closeDrawer() {
+            document.getElementById('drawerPanel').classList.remove('drawer-open');
+            document.getElementById('drawerPanel').classList.add('drawer-closed');
+            setTimeout(() => {
+                document.getElementById('drawerOverlay').classList.add('hidden');
+            }, 300);
+        }
+        function filterScenes() {
+            const q = document.getElementById('searchScene').value.trim().toLowerCase();
+            const s = document.getElementById('filterStatus').value;
+            
+            document.querySelectorAll('#scenarioList li').forEach(li => {
+                const title = (li.dataset.title || '').toLowerCase();
+                const status = li.dataset.status || 'pending';
+                
+                const matchQ = !q || title.includes(q);
+                const matchS = s === 'all' || s === status;
+                
+                li.style.display = (matchQ && matchS) ? '' : 'none';
+            });
+            // Reset selection on filter change
+            document.getElementById('selectAll').checked = false;
+            document.querySelectorAll('.scene-checkbox').forEach(c => c.checked = false);
+            updateBatchBtn();
+        }
+
+        function updateBatchBtn() {
+            const chks = document.querySelectorAll('.scene-checkbox:checked');
+            const btn = document.getElementById('btnBatchPass');
+            if(btn) {
+                btn.textContent = `批量通过本组 (${chks.length})`;
+                btn.disabled = chks.length === 0;
+            }
+            
+            // Update Select All state based on visible checkboxes
+            const visibleRows = Array.from(document.querySelectorAll('#scenarioList li')).filter(li => li.style.display !== 'none');
+            const visibleChecks = visibleRows.map(li => li.querySelector('.scene-checkbox')).filter(c=>c);
+            const checkedChecks = visibleChecks.filter(c => c.checked);
+            
+            const selectAll = document.getElementById('selectAll');
+            if(selectAll) {
+                selectAll.checked = visibleChecks.length > 0 && checkedChecks.length === visibleChecks.length;
+                selectAll.disabled = visibleChecks.length === 0;
+            }
+        }
+
+        function toggleSelectAll() {
+            const selectAll = document.getElementById('selectAll');
+            const checked = selectAll.checked;
+            
+            document.querySelectorAll('#scenarioList li').forEach(li => {
+                if(li.style.display !== 'none') {
+                    const cb = li.querySelector('.scene-checkbox');
+                    if(cb) cb.checked = checked;
+                }
+            });
+            updateBatchBtn();
+        }
+
+        function batchPass() {
+            const chks = document.querySelectorAll('.scene-checkbox:checked');
+            if(chks.length === 0) return;
+            
+            let count = 0;
+            chks.forEach(cb => {
+                const li = cb.closest('li');
+                if(li && li.dataset.status !== 'reviewed') {
+                    li.dataset.status = 'reviewed';
+                    
+                    // Visual updates
+                    li.className = 'px-3 py-3 border-b border-gray-50 hover:bg-gray-50 flex items-start gap-2 opacity-60';
+                    
+                    // Replace icon
+                    const iconContainer = li.children[1]; // checkbox is 0
+                    if(iconContainer) {
+                        const newIcon = document.createElement('i');
+                        newIcon.className = 'fa-solid fa-circle-check text-green-500 mt-1';
+                        li.replaceChild(newIcon, iconContainer);
+                    }
+                    
+                    // Strike text
+                    const txtDiv = li.querySelector('.text-gray-900');
+                    if(txtDiv) txtDiv.className = 'text-gray-900 line-through decoration-gray-400';
+                    
+                    count++;
+                }
+                cb.checked = false;
+            });
+            
+            document.getElementById('selectAll').checked = false;
+            updateBatchBtn();
+            filterScenes(); // Re-apply filter (hide if "Pending" only)
+            
+            // Simple Toast
+            const toast = document.createElement('div');
+            toast.className = 'fixed top-4 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded shadow-lg z-50 text-xs';
+            toast.textContent = `成功通过 ${count} 个场景`;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2000);
+        }
+
+        function switchView(mode) {
+            const gv = document.getElementById('graphView');
+            const tv = document.getElementById('textView');
+            const bg = document.getElementById('btnGraph');
+            const bt = document.getElementById('btnText');
+            if (mode === 'graph') {
+                gv.classList.remove('hidden');
+                tv.classList.add('hidden');
+                bg.classList.add('bg-blue-600','text-white');
+                bt.classList.remove('bg-blue-600','text-white');
+                renderTextView();
+            } else {
+                gv.classList.add('hidden');
+                tv.classList.remove('hidden');
+                bt.classList.add('bg-blue-600','text-white');
+                bg.classList.remove('bg-blue-600','text-white');
+                renderTextView();
+            }
+        }
+        function renderTextView() {
+            const listOld = document.getElementById('textListOld');
+            const listNew = document.getElementById('textListNew');
+            if (!listOld || !listNew) return;
+            
+            listOld.innerHTML = '';
+            listNew.innerHTML = '';
+
+            // Sample Data for "判别状态"
+            const sampleSopText = `目标：根据用户问题告知包裹当前最新的路由状态，位置及包裹预计送达时间，安抚用户耐心等待收货
+规则：
+1. 诉求是求助&咨询&了解现状，询问包裹到哪里了什么时间送达等类似话术
+执行思路：需告知包裹当前包裹最新状态
+参考话术："您好，查询到您的包裹已自提上架，具体位置【自提上架位置】，请您及时取件"。
+
+<span class="bg-green-100 text-green-800 border-b border-green-200">如果用户追问配送路线停滞，或者质疑配送路线错误等
+执行思路：需安抚用户当前路由在时效内正常配送中，耐心等待收货。
+参考话术："快递配送途中一般会进行中转，您的快递目前在正常配送节点哈~您不用担心~"</span>`;
+
+            const sampleSopText2 = `<span class="bg-green-100 text-green-800 border-b border-green-200">目标：明确是否需要催促站点尽快派来帮用户解决问题
+规则：
+1.用户不认可第一步给出的参考话术，用户催派紧急程度高，诉求是加急催促尽快送达或者情绪较为激动，多次提出催派送的诉求，比如今天或者明天某时间必须收到货，交通不方便，能不能让快递站的人送一下，xxx日着急用等话术。
+执行思路：需对用户进行道歉安抚，工单催促站点尽快派送，并预约回电告知跟进结果。
+参考话术："非常抱歉给您带来不便，我马上催促站点尽快帮您安排派送，请您留下联系方式，专员预计在xxx之前联系您告知进度"</span>`;
+
+            // Render Old Pane
+            const nodesOld = Array.from(document.querySelectorAll('.pane-history .node-card'));
+            nodesOld.forEach((n, idx) => {
+                const title = n.querySelector('.font-bold')?.textContent || '节点';
+                const desc = Array.from(n.querySelectorAll('div')).map(d=>d.textContent).join(' ').trim();
+                
+                const card = document.createElement('div');
+                card.className = 'border border-gray-200 rounded-lg p-3 bg-gray-50';
+                card.innerHTML = `
+                    <div class="text-xs font-bold text-gray-500 mb-2">${title}</div>
+                    <textarea readonly class="w-full text-sm text-gray-500 bg-transparent border-0 outline-none resize-none h-32 scrollbar-thin">${desc}</textarea>
+                `;
+                listOld.appendChild(card);
+            });
+
+            // Render New Pane
+            const nodesNew = Array.from(document.querySelectorAll('.pane-new .node-card'));
+            nodesNew.forEach((n, idx) => {
+                const title = n.querySelector('.font-bold')?.textContent || '节点';
+                let content = '';
+                
+                // Inject sample text for specific nodes or just based on index for demo
+                if (title.includes('判别状态')) {
+                    content = sampleSopText;
+                } else if (title.includes('升级工单')) {
+                    content = sampleSopText2;
+                } else {
+                    // Fallback to existing short description
+                     // Get direct text content excluding children with classes (like buttons/badges)
+                    const clone = n.cloneNode(true);
+                    Array.from(clone.querySelectorAll('.btn-delete, .bg-blue-100, .bg-green-100')).forEach(el => el.remove());
+                    content = clone.textContent.replace(title, '').trim();
+                }
+
+                let statusBadge = '';
+                let borderClass = 'border-gray-200';
+                
+                if (n.classList.contains('node-new')) {
+                    statusBadge = '<span class="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded ml-2">新增</span>';
+                    borderClass = 'border-green-200 ring-1 ring-green-100';
+                    content = content || sampleSopText2; // Default new nodes to sample 2 if empty
+                } else if (n.classList.contains('node-update')) {
+                    statusBadge = '<span class="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded ml-2">更新</span>';
+                    borderClass = 'border-blue-200 ring-1 ring-blue-100';
+                    content = content || sampleSopText;
+                }
+
+                const card = document.createElement('div');
+                card.className = `relative border ${borderClass} rounded-lg p-3 bg-white shadow-sm group hover:shadow-md transition-shadow`;
+                card.innerHTML = `
+                    <div class="flex justify-between items-center mb-2">
+                        <div class="flex items-center">
+                            <span class="text-sm font-bold text-gray-800">${title}</span>
+                            ${statusBadge}
+                        </div>
+                        <button class="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1" onclick="this.closest('.relative').remove(); updateCount();" title="删除节点">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                    <div contenteditable="true" class="w-full text-sm text-gray-700 bg-gray-50/50 border border-gray-100 rounded p-2 outline-none focus:border-blue-300 focus:bg-white overflow-y-auto h-64 leading-relaxed custom-scrollbar whitespace-pre-wrap">${content}</div>
+                `;
+                listNew.appendChild(card);
+            });
+            updateCount();
+        }
+
+        function updateCount() {
+             const count = document.getElementById('textListNew').children.length;
+             const badge = document.querySelector('#textView .bg-blue-100.rounded-full');
+             if(badge) badge.textContent = `${count} 个节点`;
+        }
+        function toggleExportMenu() {
+            const m = document.getElementById('exportMenu');
+            m.classList.toggle('hidden');
+        }
+        function exportCSV() {
+            const rows = [['节点','状态','描述']];
+            Array.from(document.querySelectorAll('.pane-new .node-card')).forEach(n=>{
+                const title = n.querySelector('.font-bold')?.textContent || '';
+                const desc = Array.from(n.querySelectorAll('div')).map(d=>d.textContent).join(' ').trim();
+                let status = '未变';
+                if (n.classList.contains('node-new')) status = '新增';
+                else if (n.classList.contains('node-update')) status = '更新';
+                rows.push([title,status,desc]);
+            });
+            const csv = rows.map(r=>r.map(c=>('"'+String(c).replace(/"/g,'""')+'"')).join(',')).join('\n');
+            const blob = new Blob([csv],{type:'text/csv;charset=utf-8'});
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'SOP-校验.csv'; document.body.appendChild(a); a.click(); a.remove();
+            setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+        }
+        function exportText() {
+            const lines = [];
+            Array.from(document.querySelectorAll('.pane-new .node-card')).forEach(n=>{
+                const title = n.querySelector('.font-bold')?.textContent || '';
+                const desc = Array.from(n.querySelectorAll('div')).map(d=>d.textContent).join(' ').trim();
+                let status = '未变';
+                if (n.classList.contains('node-new')) status = '新增';
+                else if (n.classList.contains('node-update')) status = '更新';
+                lines.push((status==='新增'?'[新增] ':'')+title+'\n'+desc);
+            });
+            const blob = new Blob([lines.join('\n\n')],{type:'text/plain;charset=utf-8'});
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'SOP-校验.txt'; document.body.appendChild(a); a.click(); a.remove();
+            setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+        }
+        function exportImage(type) {
+            const target = document.getElementById('graphView');
+            const fn = type==='png'?htmlToImage.toPng:htmlToImage.toJpeg;
+            fn(target,{pixelRatio:2}).then(dataUrl=>{
+                const a = document.createElement('a'); a.href=dataUrl; a.download= type==='png'?'SOP-校验.png':'SOP-校验.jpg'; document.body.appendChild(a); a.click(); a.remove();
+            });
+        }
+        window.addEventListener('DOMContentLoaded',()=>{
+            const s = document.getElementById('searchScene');
+            if (s) s.addEventListener('input', filterScenes);
+            const fs = document.getElementById('filterStatus');
+            if (fs) fs.addEventListener('change', filterScenes);
+            const sa = document.getElementById('selectAll');
+            if (sa) sa.addEventListener('change', toggleSelectAll);
+            const bbp = document.getElementById('btnBatchPass');
+            if (bbp) bbp.addEventListener('click', batchPass);
+            
+            const list = document.getElementById('scenarioList');
+            if(list) {
+                list.addEventListener('change', (e) => {
+                    if(e.target.classList.contains('scene-checkbox')) {
+                        updateBatchBtn();
+                    }
+                });
+            }
+
+            const bg = document.getElementById('btnGraph');
+            const bt = document.getElementById('btnText');
+            if (bg) bg.addEventListener('click',()=>switchView('graph'));
+            if (bt) bt.addEventListener('click',()=>switchView('text'));
+            const eb = document.getElementById('exportBtn');
+            if (eb) eb.addEventListener('click', toggleExportMenu);
+            const em = document.getElementById('exportMenu');
+            document.addEventListener('click', (e)=>{
+                if (!em.contains(e.target) && e.target!==eb) em.classList.add('hidden');
+            });
+            document.getElementById('expCSV').addEventListener('click', exportCSV);
+            document.getElementById('expTXT').addEventListener('click', exportText);
+            document.getElementById('expPNG').addEventListener('click', ()=>exportImage('png'));
+            document.getElementById('expJPG').addEventListener('click', ()=>exportImage('jpg'));
+            switchView('graph');
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js"></script>
+</body>
+</html>
