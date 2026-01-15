@@ -117,7 +117,6 @@
             <span class="font-bold text-lg text-gray-700">知识中台</span>
         </div>
         
-        <!-- Center: Navigation -->
         <div class="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
             <nav class="flex items-center gap-2 text-sm font-medium text-gray-600">
                 <a href="#" class="px-3 py-2 hover:bg-gray-100 hover:text-gray-900 rounded-md transition-colors">知识检索</a>
@@ -132,8 +131,15 @@
                         知识管理 <i class="fa-solid fa-chevron-down text-xs scale-75 opacity-70"></i>
                     </button>
                 </div>
+                <div class="relative group">
+                    <button class="flex items-center gap-1 px-3 py-2 bg-blue-50 text-blue-600 rounded-md transition-colors font-bold">
+                        知识应用 <i class="fa-solid fa-chevron-down text-xs scale-75 opacity-70"></i>
+                    </button>
+                    <div class="absolute left-0 mt-1 w-32 bg-white border border-gray-200 rounded shadow-md text-sm text-gray-700 py-1 hidden group-hover:block">
+                        <a href="#" class="block px-3 py-1.5 hover:bg-gray-100 hover:text-gray-900">流程数据</a>
+                    </div>
+                </div>
                 <a href="#" class="px-3 py-2 hover:bg-gray-100 hover:text-gray-900 rounded-md transition-colors">系统管理</a>
-                <a href="#" class="px-3 py-2 bg-blue-50 text-blue-600 rounded-md transition-colors font-bold">流程数据</a>
             </nav>
         </div>
 
@@ -178,22 +184,9 @@
                     </div>
                 </div>
 
-                <div class="flex gap-3 items-end">
-                    <div class="flex-1 flex items-center gap-3">
-                         <label class="text-xs font-bold text-gray-700 whitespace-nowrap">推送状态</label>
-                        <div class="relative w-full custom-select" tabindex="0">
-                            <div class="custom-select-trigger w-full px-3 py-2 border border-gray-300 rounded text-sm text-gray-500 outline-none">
-                                <span>请选择推送状态</span>
-                                <i class="fa-solid fa-chevron-down text-xs text-gray-400 custom-arrow"></i>
-                            </div>
-                            <div class="custom-options">
-                                <div class="custom-option" data-value="pushed">已推送</div>
-                                <div class="custom-option" data-value="unpushed">未推送</div>
-                            </div>
-                        </div>
-                    </div>
+                <div class="flex justify-end items-end">
                     <div class="flex gap-2">
-                         <button class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded text-sm font-medium transition-colors">重置</button>
+                        <button class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded text-sm font-medium transition-colors">重置</button>
                         <button class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium shadow transition-colors">查询</button>
                     </div>
                 </div>
@@ -206,12 +199,20 @@
                 <div class="flex items-center gap-3">
                     <h2 class="font-bold text-gray-800 text-lg">SOP列表</h2>
                 </div>
-                <div class="flex gap-3">
-                    <button class="flex items-center gap-2 px-4 py-2 bg-white border border-blue-600 text-blue-600 hover:bg-blue-50 rounded text-sm font-medium transition-colors">
-                        <i class="fa-solid fa-cloud-arrow-up"></i> 推送
-                    </button>
+                <div class="flex gap-3 items-center">
+                    <div class="relative custom-select w-32" tabindex="0">
+                        <div class="custom-select-trigger w-full px-3 py-2 border border-gray-300 rounded text-sm text-gray-700 bg-white">
+                            <span>导出</span>
+                            <i class="fa-solid fa-chevron-down text-xs text-gray-400 custom-arrow"></i>
+                        </div>
+                        <div class="custom-options">
+                            <div class="custom-option" data-value="export-txt">导出txt</div>
+                            <div class="custom-option" data-value="export-markdown">导出markdown</div>
+                            <div class="custom-option" data-value="export-mermaid">导出mermaid代码</div>
+                        </div>
+                    </div>
                     <button onclick="window.location.href='流程数据校验页.html'" class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium shadow">
-                        <i class="fa-solid fa-plus"></i> 校验
+                        <i class="fa-solid fa-plus"></i> 开始校验
                     </button>
                     <div class="flex gap-1">
                         <button class="w-8 h-8 rounded-full hover:bg-gray-100 text-gray-500"><i class="fa-solid fa-rotate-right"></i></button>
@@ -224,13 +225,12 @@
                 <table class="w-full text-left border-collapse">
                     <thead>
                         <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider border-b border-gray-200">
-                            <th class="px-6 py-4 font-semibold w-12">
-                                <input type="checkbox" class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer">
+                            <th class="pl-6 pr-2 py-4 w-10">
+                                <input type="checkbox" class="accent-blue-600 rounded">
                             </th>
-                            <th class="px-6 py-4 font-semibold">ID</th>
-                            <th class="px-6 py-4 font-semibold">场景</th>
+                            <th class="px-2 py-4 font-semibold">ID</th>
+                            <th class="px-6 py-4 font-semibold">详情</th>
                             <th class="px-6 py-4 font-semibold">审核状态</th>
-                            <th class="px-6 py-4 font-semibold">推送状态</th>
                             <th class="px-6 py-4 font-semibold">更新时间</th>
                             <th class="px-6 py-4 font-semibold text-right">操作</th>
                         </tr>
@@ -238,16 +238,13 @@
                     <tbody class="text-sm divide-y divide-gray-100">
 
                         <tr class="table-row-hover bg-white transition-colors">
-                            <td class="px-6 py-4">
-                                <input type="checkbox" class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer">
+                            <td class="pl-6 pr-2 py-4 align-top">
+                                <input type="checkbox" class="accent-blue-600 rounded">
                             </td>
-                            <td class="px-6 py-4 font-mono text-gray-600">sop_20260112_001</td>
+                            <td class="px-2 py-4 font-mono text-gray-600">sop_20260112_001</td>
                             <td class="px-6 py-4 font-medium text-gray-800">未到站-常规催派送</td>
                             <td class="px-6 py-4">
                                 <span class="badge badge-green">已审核</span>
-                            </td>
-                            <td class="px-6 py-4">
-                                <span class="badge badge-gray">未推送</span>
                             </td>
                             <td class="px-6 py-4 text-gray-500">2026-01-12 10:30:00</td>
                             <td class="px-6 py-4 text-right space-x-3">
@@ -258,19 +255,16 @@
                         </tr>
 
                         <tr class="table-row-hover bg-purple-50/30 transition-colors">
-                            <td class="px-6 py-4">
-                                <input type="checkbox" class="w-4 h-4 text-gray-300 rounded border-gray-300 cursor-not-allowed bg-gray-100" disabled>
+                            <td class="pl-6 pr-2 py-4 align-top">
+                                <input type="checkbox" class="accent-gray-300 rounded cursor-not-allowed" disabled>
                             </td>
-                            <td class="px-6 py-4 font-mono text-gray-600">sop_20260112_002</td>
+                            <td class="px-2 py-4 font-mono text-gray-600">sop_20260112_002</td>
                             <td class="px-6 py-4 font-medium text-gray-800">包裹丢失-理赔引导</td>
                             <td class="px-6 py-4">
                                 <div class="flex flex-col">
                                     <span class="badge badge-purple mb-1 w-fit">处理中</span>
                                     <span class="text-[10px] text-purple-600">处理人：yezitong.1</span>
                                 </div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <span class="badge badge-gray">未推送</span>
                             </td>
                             <td class="px-6 py-4 text-gray-500">2026-01-12 09:15:00</td>
                             <td class="px-6 py-4 text-right space-x-3">
@@ -281,18 +275,15 @@
                         </tr>
 
                         <tr class="bg-gray-50/80">
-                            <td class="px-6 py-4">
-                                <input type="checkbox" class="w-4 h-4 text-gray-300 rounded border-gray-300 cursor-not-allowed bg-gray-100" disabled>
+                            <td class="pl-6 pr-2 py-4 align-top">
+                                <input type="checkbox" class="accent-gray-300 rounded cursor-not-allowed" disabled>
                             </td>
-                            <td class="px-6 py-4 font-mono text-gray-400">sop_20260112_003</td>
+                            <td class="px-2 py-4 font-mono text-gray-400">sop_20260112_003</td>
                             <td class="px-6 py-4 font-medium text-gray-500">破损-外包装破损</td>
                             <td class="px-6 py-4">
                                 <span class="badge badge-blue">生成中</span>
                             </td>
-                            <td class="px-6 py-4">
-                                <span class="badge badge-gray">未推送</span>
-                            </td>
-                            <td class="px-6 py-4 text-gray-400">-</td>
+                            <td class="px-6 py-4 text-gray-500">2026-01-12 09:00:00</td>
                             <td class="px-6 py-4 text-right space-x-3">
                                 <button class="text-gray-400 cursor-not-allowed font-medium" disabled>校验</button>
                                 <button class="text-gray-400 cursor-not-allowed font-medium" disabled>重新生成</button>
@@ -301,16 +292,13 @@
                         </tr>
 
                         <tr class="table-row-hover bg-white transition-colors">
-                            <td class="px-6 py-4">
-                                <input type="checkbox" class="w-4 h-4 text-gray-300 rounded border-gray-300 cursor-not-allowed bg-gray-100" disabled>
+                            <td class="pl-6 pr-2 py-4 align-top">
+                                <input type="checkbox" class="accent-blue-600 rounded">
                             </td>
-                            <td class="px-6 py-4 font-mono text-gray-600">sop_20260111_089</td>
+                            <td class="px-2 py-4 font-mono text-gray-600">sop_20260111_089</td>
                             <td class="px-6 py-4 font-medium text-gray-800">地址修改-同城转寄</td>
                             <td class="px-6 py-4">
                                 <span class="badge badge-green">已审核</span>
-                            </td>
-                            <td class="px-6 py-4">
-                                <span class="badge badge-green">已推送</span>
                             </td>
                             <td class="px-6 py-4 text-gray-500">2026-01-11 15:20:00</td>
                             <td class="px-6 py-4 text-right space-x-3">
@@ -321,16 +309,13 @@
                         </tr>
 
                         <tr class="table-row-hover bg-white transition-colors">
-                            <td class="px-6 py-4">
-                                <input type="checkbox" class="w-4 h-4 text-gray-300 rounded border-gray-300 cursor-not-allowed bg-gray-100" disabled>
+                            <td class="pl-6 pr-2 py-4 align-top">
+                                <input type="checkbox" class="accent-gray-300 rounded cursor-not-allowed" disabled>
                             </td>
-                            <td class="px-6 py-4 font-mono text-gray-600">sop_20260112_005</td>
+                            <td class="px-2 py-4 font-mono text-gray-600">sop_20260112_005</td>
                             <td class="px-6 py-4 font-medium text-gray-800">投诉-虚假签收</td>
                             <td class="px-6 py-4">
                                 <span class="badge badge-red">生成失败</span>
-                            </td>
-                            <td class="px-6 py-4">
-                                <span class="badge badge-gray">未推送</span>
                             </td>
                             <td class="px-6 py-4 text-gray-500">2026-01-12 08:00:00</td>
                             <td class="px-6 py-4 text-right space-x-3">
@@ -341,16 +326,13 @@
                         </tr>
 
                          <tr class="table-row-hover bg-white transition-colors">
-                            <td class="px-6 py-4">
-                                <input type="checkbox" class="w-4 h-4 text-gray-300 rounded border-gray-300 cursor-not-allowed bg-gray-100" disabled>
+                            <td class="pl-6 pr-2 py-4 align-top">
+                                <input type="checkbox" class="accent-gray-300 rounded cursor-not-allowed" disabled>
                             </td>
-                            <td class="px-6 py-4 font-mono text-gray-600">sop_20260112_006</td>
+                            <td class="px-2 py-4 font-mono text-gray-600">sop_20260112_006</td>
                             <td class="px-6 py-4 font-medium text-gray-800">费用争议-多收运费</td>
                             <td class="px-6 py-4">
                                 <span class="badge badge-yellow">待审核</span>
-                            </td>
-                            <td class="px-6 py-4">
-                                <span class="badge badge-gray">未推送</span>
                             </td>
                             <td class="px-6 py-4 text-gray-500">2026-01-12 11:00:00</td>
                             <td class="px-6 py-4 text-right space-x-3">

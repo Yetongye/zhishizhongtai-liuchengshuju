@@ -104,7 +104,6 @@
             <span class="font-bold text-lg text-gray-700">知识中台</span>
         </div>
         
-        <!-- Center: Navigation -->
         <div class="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
             <nav class="flex items-center gap-2 text-sm font-medium text-gray-600">
                 <a href="#" class="px-3 py-2 hover:bg-gray-100 hover:text-gray-900 rounded-md transition-colors">知识检索</a>
@@ -119,8 +118,15 @@
                         知识管理 <i class="fa-solid fa-chevron-down text-xs scale-75 opacity-70"></i>
                     </button>
                 </div>
+                <div class="relative group">
+                    <button class="flex items-center gap-1 px-3 py-2 bg-blue-50 text-blue-600 rounded-md transition-colors font-bold">
+                        知识应用 <i class="fa-solid fa-chevron-down text-xs scale-75 opacity-70"></i>
+                    </button>
+                    <div class="absolute left-0 mt-1 w-32 bg-white border border-gray-200 rounded shadow-md text-sm text-gray-700 py-1 hidden group-hover:block">
+                        <a href="#" class="block px-3 py-1.5 hover:bg-gray-100 hover:text-gray-900">流程数据</a>
+                    </div>
+                </div>
                 <a href="#" class="px-3 py-2 hover:bg-gray-100 hover:text-gray-900 rounded-md transition-colors">系统管理</a>
-                <a href="#" class="px-3 py-2 bg-blue-50 text-blue-600 rounded-md transition-colors font-bold">流程数据</a>
             </nav>
         </div>
 
@@ -134,9 +140,6 @@
 
     <div class="h-14 bg-white border-b border-gray-200 flex items-center justify-between px-4 z-20 flex-shrink-0">
         <div class="flex items-center gap-4">
-            <button onclick="toggleSidebar()" class="text-gray-500 hover:bg-gray-100 p-2 rounded">
-                <i class="fa-solid fa-bars"></i>
-            </button>
             <h1 class="font-bold text-lg">知识校验工作台</h1>
             <span class="text-sm text-gray-400">|</span>
             <span class="text-sm text-gray-600">物流异常-停滞未更新-20251124</span>
@@ -151,6 +154,9 @@
                 <button id="btnGraph" class="px-3 py-1 bg-blue-600 text-white">图谱视角</button>
                 <button id="btnText" class="px-3 py-1 text-gray-700 hover:bg-gray-200">文本视角</button>
             </div>
+            <button id="diffToggle" class="px-3 py-1 text-xs border border-gray-300 rounded hover:bg-gray-50 text-gray-700">
+                Diff 模式：开
+            </button>
             <div class="relative">
                 <button id="exportBtn" class="px-3 py-1 text-sm bg-white border border-gray-300 rounded hover:bg-gray-50 flex items-center gap-1">
                     <i class="fa-solid fa-download"></i> 导出 <i class="fa-solid fa-chevron-down text-xs"></i>
@@ -164,84 +170,6 @@
     </div>
 
     <div class="flex flex-1 overflow-hidden relative">
-
-        <aside id="sidebar" class="sidebar w-64 bg-white border-r border-gray-200 flex flex-col z-10">
-            <div class="p-4 border-b border-gray-100 space-y-3">
-                <!-- 1. 审核状态 -->
-                <div>
-                    <label class="text-xs font-bold text-gray-500 block mb-1">审核状态</label>
-                    <select id="filterStatus" class="w-full h-8 border border-gray-300 rounded px-2 text-xs outline-none focus:border-blue-500 bg-white">
-                        <option value="all">全部场景</option>
-                        <option value="pending">待审核</option>
-                        <option value="reviewed">已审核</option>
-                    </select>
-                </div>
-                
-                <!-- 2. 搜索场景 -->
-                <div>
-                    <label class="text-xs font-bold text-gray-500 block mb-1">搜索场景</label>
-                    <div class="relative">
-                        <i class="fa-solid fa-search absolute left-2.5 top-2 text-gray-400 text-xs"></i>
-                        <input id="searchScene" type="text" class="w-full h-8 border border-gray-300 rounded pl-8 pr-2 text-xs outline-none focus:border-blue-500" placeholder="输入关键字查找...">
-                    </div>
-                </div>
-            </div>
-
-            <div class="flex-1 overflow-y-auto">
-                <div class="group">
-                    <div class="px-4 py-2 bg-gray-50 text-xs font-bold text-gray-500 uppercase flex justify-between items-center sticky top-0 z-10 border-y border-gray-100">
-                        <span>物流异常列表</span>
-                        <div class="flex items-center gap-2">
-                            <label class="flex items-center gap-1 cursor-pointer font-normal text-gray-400 hover:text-blue-600">
-                                <input type="checkbox" id="selectAll" class="accent-blue-600 rounded">
-                                全选
-                            </label>
-                            <i class="fa-solid fa-chevron-down"></i>
-                        </div>
-                    </div>
-                    
-                    <ul id="scenarioList" class="text-sm">
-                        <!-- Item 1: 已审核 -->
-                        <li data-title="已发车未到站" data-status="reviewed" class="px-3 py-3 border-b border-gray-50 hover:bg-gray-50 flex items-start gap-2 opacity-60">
-                            <input type="checkbox" class="scene-checkbox mt-1 accent-blue-600 rounded">
-                            <i class="fa-solid fa-circle-check text-green-500 mt-1"></i>
-                            <div>
-                                <div class="text-gray-900 line-through decoration-gray-400">已发车未到站</div>
-                                <div class="text-[10px] text-gray-400">更新时间: 2025-11-01 10:20</div>
-                            </div>
-                        </li>
-
-                        <!-- Item 2: 待审核 (Active) -->
-                        <li data-title="停滞未更新" data-status="pending" class="px-3 py-3 border-b border-gray-50 bg-blue-50 border-l-4 border-l-blue-500 flex items-start gap-2 cursor-pointer">
-                            <input type="checkbox" class="scene-checkbox mt-1 accent-blue-600 rounded">
-                            <div class="mt-1 w-3 h-3 rounded-full bg-yellow-400 border border-yellow-500 flex-shrink-0"></div>
-                            <div class="flex-1">
-                                <div class="font-bold text-gray-900">停滞未更新</div>
-                                <div class="text-[10px] text-gray-400">更新时间: 2025-11-24 15:20</div>
-
-                                <div class="text-[10px] text-blue-600 bg-blue-100 inline-block px-1 rounded mt-1">版本 V1.1</div>
-                            </div>
-                        </li>
-
-                        <!-- Item 3: 待审核 (Error) -->
-                        <li data-title="货物丢失/破损" data-status="pending" class="px-3 py-3 border-b border-gray-50 hover:bg-red-50 flex items-start gap-2 cursor-pointer">
-                            <input type="checkbox" class="scene-checkbox mt-1 accent-blue-600 rounded">
-                            <i class="fa-solid fa-circle-xmark text-red-500 mt-1"></i>
-                            <div>
-                                <div class="text-gray-900">货物丢失/破损</div>
-                                <div class="text-[10px] text-red-500">需重新生成</div>
-                            </div>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-
-            <div class="p-3 border-t border-gray-200 bg-gray-50 text-center">
-                <button id="btnBatchPass" class="w-full py-2 bg-white border border-blue-200 text-blue-600 text-xs font-bold rounded shadow-sm hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed">
-                    批量通过本组 (0)
-                </button>
-            </div>
-        </aside>
 
         <main class="flex-1 flex flex-col relative min-w-0">
             <div class="absolute top-4 left-1/2 -translate-x-1/2 z-20 flex bg-white shadow rounded-lg border border-gray-200 p-1 text-xs">
@@ -315,7 +243,7 @@
             <div id="textView" class="flex-1 overflow-hidden hidden bg-gray-50">
                 <div class="flex h-full">
                     <!-- 左栏：原版 -->
-                    <div class="w-1/2 flex flex-col border-r border-gray-200">
+                    <div id="textOldColumn" class="w-1/2 flex flex-col border-r border-gray-200">
                         
                         <div class="flex-1 overflow-y-auto p-4 space-y-4" id="textListOld">
                             <!-- JS Generated -->
@@ -323,7 +251,7 @@
                     </div>
                     
                     <!-- 右栏：新版 -->
-                    <div class="w-1/2 flex flex-col bg-white">
+                    <div id="textNewColumn" class="w-1/2 flex flex-col bg-white">
                         
                         <div class="flex-1 overflow-y-auto p-4 space-y-4" id="textListNew">
                             <!-- JS Generated -->
@@ -336,14 +264,10 @@
                 <div class="text-xs text-gray-500">
                     上次更新: 2025-11-01 14:30 By yezitong.1
                 </div>
-                <div class="flex gap-3">
-                    <button class="px-5 py-2 border border-red-300 text-red-600 rounded hover:bg-red-50 font-medium transition-colors">
-                        驳回
-                    </button>
-                    <button class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium shadow transition-transform active:scale-95 flex items-center">
-                        <i class="fa-solid fa-check mr-2"></i> 校验通过 (下一个)
-                    </button>
-                </div>
+                <button id="btnPassCurrent" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium shadow flex items-center gap-2 active:scale-95">
+                    <i class="fa-solid fa-check"></i>
+                    校验通过
+                </button>
             </footer>
         </main>
 
@@ -355,7 +279,12 @@
                     <h3 class="font-bold text-gray-800">节点编辑</h3>
                     <p class="text-xs text-blue-600">判别状态 (Updated)</p>
                 </div>
-                <button onclick="closeDrawer()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+                <div class="flex items-center gap-2">
+                    <button onclick="undoLastAction()" class="px-3 py-1 text-xs border border-gray-300 rounded text-gray-700 hover:bg-gray-100">
+                        撤回
+                    </button>
+                    <button onclick="closeDrawer()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
             </div>
 
             <div class="flex-1 overflow-y-auto p-5 space-y-6">
@@ -364,7 +293,7 @@
 
                 <div>
                     <label class="block text-xs font-bold text-gray-500 uppercase mb-1">节点规则</label>
-                    <div class="w-full border border-blue-200 rounded p-3 text-sm bg-blue-50/20 leading-relaxed" contenteditable="true">
+                    <div id="nodeRule" class="w-full border border-blue-200 rounded p-3 text-sm bg-blue-50/20 leading-relaxed" contenteditable="true">
                         1. 运单状态必须为“运输中”或“异常”；<br>
                         2. <span class="diff-add" title="新增内容">最近一条物流更新时间 > 24小时</span>；<br>
                         3. 非偏远地区订单。
@@ -374,7 +303,7 @@
 
                 <div>
                     <label class="block text-xs font-bold text-gray-500 uppercase mb-1">执行思路</label>
-                    <textarea class="w-full border border-gray-300 rounded p-2 text-sm h-20 outline-none focus:border-blue-500">调用物流轨迹API，获取 latest_timestamp，与当前时间做差值计算。</textarea>
+                    <textarea id="nodeThought" class="w-full border border-gray-300 rounded p-2 text-sm h-20 outline-none focus:border-blue-500">调用物流轨迹API，获取 latest_timestamp，与当前时间做差值计算。</textarea>
                 </div>
 
                 <div>
@@ -384,7 +313,7 @@
                              <button class="p-1 hover:bg-gray-200 rounded"><i class="fa-solid fa-bold text-xs"></i></button>
                              <span class="text-[10px] text-gray-400 self-center">富文本编辑</span>
                          </div>
-                         <textarea class="w-full p-2 text-sm h-24 outline-none resize-none">亲，查看到您的包裹在【北京分拨中心】停留超过24小时，这确实不正常。我马上为您升级工单处理。</textarea>
+                         <textarea id="nodeSpeech" class="w-full p-2 text-sm h-24 outline-none resize-none">亲，查看到您的包裹在【北京分拨中心】停留超过24小时，这确实不正常。我马上为您升级工单处理。</textarea>
                     </div>
                 </div>
 
@@ -401,6 +330,8 @@
     </div>
 
     <script>
+        let drawerInitialState = null;
+        let diffEnabled = true;
         // 侧边栏收起逻辑 [Source: 156]
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
@@ -412,6 +343,14 @@
             document.getElementById('drawerOverlay').classList.remove('hidden');
             document.getElementById('drawerPanel').classList.remove('drawer-closed');
             document.getElementById('drawerPanel').classList.add('drawer-open');
+            const rule = document.getElementById('nodeRule');
+            const thought = document.getElementById('nodeThought');
+            const speech = document.getElementById('nodeSpeech');
+            drawerInitialState = {
+                rule: rule ? rule.innerHTML : '',
+                thought: thought ? thought.value : '',
+                speech: speech ? speech.value : ''
+            };
         }
 
         function closeDrawer() {
@@ -421,96 +360,65 @@
                 document.getElementById('drawerOverlay').classList.add('hidden');
             }, 300);
         }
-        function filterScenes() {
-            const q = document.getElementById('searchScene').value.trim().toLowerCase();
-            const s = document.getElementById('filterStatus').value;
-            
-            document.querySelectorAll('#scenarioList li').forEach(li => {
-                const title = (li.dataset.title || '').toLowerCase();
-                const status = li.dataset.status || 'pending';
-                
-                const matchQ = !q || title.includes(q);
-                const matchS = s === 'all' || s === status;
-                
-                li.style.display = (matchQ && matchS) ? '' : 'none';
-            });
-            // Reset selection on filter change
-            document.getElementById('selectAll').checked = false;
-            document.querySelectorAll('.scene-checkbox').forEach(c => c.checked = false);
-            updateBatchBtn();
-        }
-
-        function updateBatchBtn() {
-            const chks = document.querySelectorAll('.scene-checkbox:checked');
-            const btn = document.getElementById('btnBatchPass');
-            if(btn) {
-                btn.textContent = `批量通过本组 (${chks.length})`;
-                btn.disabled = chks.length === 0;
-            }
-            
-            // Update Select All state based on visible checkboxes
-            const visibleRows = Array.from(document.querySelectorAll('#scenarioList li')).filter(li => li.style.display !== 'none');
-            const visibleChecks = visibleRows.map(li => li.querySelector('.scene-checkbox')).filter(c=>c);
-            const checkedChecks = visibleChecks.filter(c => c.checked);
-            
-            const selectAll = document.getElementById('selectAll');
-            if(selectAll) {
-                selectAll.checked = visibleChecks.length > 0 && checkedChecks.length === visibleChecks.length;
-                selectAll.disabled = visibleChecks.length === 0;
-            }
-        }
-
-        function toggleSelectAll() {
-            const selectAll = document.getElementById('selectAll');
-            const checked = selectAll.checked;
-            
-            document.querySelectorAll('#scenarioList li').forEach(li => {
-                if(li.style.display !== 'none') {
-                    const cb = li.querySelector('.scene-checkbox');
-                    if(cb) cb.checked = checked;
-                }
-            });
-            updateBatchBtn();
-        }
-
-        function batchPass() {
-            const chks = document.querySelectorAll('.scene-checkbox:checked');
-            if(chks.length === 0) return;
-            
-            let count = 0;
-            chks.forEach(cb => {
-                const li = cb.closest('li');
-                if(li && li.dataset.status !== 'reviewed') {
-                    li.dataset.status = 'reviewed';
-                    
-                    // Visual updates
-                    li.className = 'px-3 py-3 border-b border-gray-50 hover:bg-gray-50 flex items-start gap-2 opacity-60';
-                    
-                    // Replace icon
-                    const iconContainer = li.children[1]; // checkbox is 0
-                    if(iconContainer) {
-                        const newIcon = document.createElement('i');
-                        newIcon.className = 'fa-solid fa-circle-check text-green-500 mt-1';
-                        li.replaceChild(newIcon, iconContainer);
-                    }
-                    
-                    // Strike text
-                    const txtDiv = li.querySelector('.text-gray-900');
-                    if(txtDiv) txtDiv.className = 'text-gray-900 line-through decoration-gray-400';
-                    
-                    count++;
-                }
-                cb.checked = false;
-            });
-            
-            document.getElementById('selectAll').checked = false;
-            updateBatchBtn();
-            filterScenes(); // Re-apply filter (hide if "Pending" only)
-            
-            // Simple Toast
+        function undoLastAction() {
+            if (!drawerInitialState) return;
+            const rule = document.getElementById('nodeRule');
+            const thought = document.getElementById('nodeThought');
+            const speech = document.getElementById('nodeSpeech');
+            if (rule) rule.innerHTML = drawerInitialState.rule;
+            if (thought) thought.value = drawerInitialState.thought;
+            if (speech) speech.value = drawerInitialState.speech;
             const toast = document.createElement('div');
             toast.className = 'fixed top-4 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded shadow-lg z-50 text-xs';
-            toast.textContent = `成功通过 ${count} 个场景`;
+            toast.textContent = '已撤回到打开节点前的内容';
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2000);
+        }
+        function applyDiffMode() {
+            const historyPane = document.querySelector('.pane-history');
+            const newPane = document.querySelector('.pane-new');
+            const textOldCol = document.getElementById('textOldColumn');
+            const textNewCol = document.getElementById('textNewColumn');
+            if (diffEnabled) {
+                if (historyPane) historyPane.classList.remove('hidden');
+                if (newPane) {
+                    newPane.classList.remove('w-full');
+                    if (!newPane.classList.contains('w-1/2')) newPane.classList.add('w-1/2');
+                }
+                if (textOldCol) textOldCol.classList.remove('hidden');
+                if (textNewCol) {
+                    textNewCol.classList.remove('w-full');
+                    if (!textNewCol.classList.contains('w-1/2')) textNewCol.classList.add('w-1/2');
+                }
+            } else {
+                if (historyPane) historyPane.classList.add('hidden');
+                if (newPane) {
+                    newPane.classList.remove('w-1/2');
+                    if (!newPane.classList.contains('w-full')) newPane.classList.add('w-full');
+                }
+                if (textOldCol) textOldCol.classList.add('hidden');
+                if (textNewCol) {
+                    textNewCol.classList.remove('w-1/2');
+                    if (!textNewCol.classList.contains('w-full')) textNewCol.classList.add('w-full');
+                }
+            }
+        }
+        function toggleDiff() {
+            diffEnabled = !diffEnabled;
+            const btn = document.getElementById('diffToggle');
+            if (btn) {
+                btn.textContent = diffEnabled ? 'Diff 模式：开' : 'Diff 模式：关';
+            }
+            applyDiffMode();
+        }
+        function filterScenes() {
+            const s = document.getElementById('scenarioList');
+            if (!s) return;
+        }
+        function passCurrentScenario() {
+            const toast = document.createElement('div');
+            toast.className = 'fixed top-4 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded shadow-lg z-50 text-xs';
+            toast.textContent = '已校验通过当前SOP';
             document.body.appendChild(toast);
             setTimeout(() => toast.remove(), 2000);
         }
@@ -671,23 +579,8 @@
             });
         }
         window.addEventListener('DOMContentLoaded',()=>{
-            const s = document.getElementById('searchScene');
-            if (s) s.addEventListener('input', filterScenes);
-            const fs = document.getElementById('filterStatus');
-            if (fs) fs.addEventListener('change', filterScenes);
-            const sa = document.getElementById('selectAll');
-            if (sa) sa.addEventListener('change', toggleSelectAll);
-            const bbp = document.getElementById('btnBatchPass');
-            if (bbp) bbp.addEventListener('click', batchPass);
-            
-            const list = document.getElementById('scenarioList');
-            if(list) {
-                list.addEventListener('change', (e) => {
-                    if(e.target.classList.contains('scene-checkbox')) {
-                        updateBatchBtn();
-                    }
-                });
-            }
+            const passBtn = document.getElementById('btnPassCurrent');
+            if (passBtn) passBtn.addEventListener('click', passCurrentScenario);
 
             const bg = document.getElementById('btnGraph');
             const bt = document.getElementById('btnText');
@@ -703,7 +596,10 @@
             document.getElementById('expTXT').addEventListener('click', exportText);
             document.getElementById('expPNG').addEventListener('click', ()=>exportImage('png'));
             document.getElementById('expJPG').addEventListener('click', ()=>exportImage('jpg'));
+            const dt = document.getElementById('diffToggle');
+            if (dt) dt.addEventListener('click', toggleDiff);
             switchView('graph');
+            applyDiffMode();
         });
     </script>
     <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js"></script>
