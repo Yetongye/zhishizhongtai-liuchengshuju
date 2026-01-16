@@ -140,6 +140,9 @@
 
     <div class="h-14 bg-white border-b border-gray-200 flex items-center justify-between px-4 z-20 flex-shrink-0">
         <div class="flex items-center gap-4">
+            <button onclick="toggleSidebar()" class="text-gray-500 hover:bg-gray-100 p-2 rounded">
+                <i class="fa-solid fa-bars"></i>
+            </button>
             <h1 class="font-bold text-lg">知识校验工作台</h1>
             <span class="text-sm text-gray-400">|</span>
             <span class="text-sm text-gray-600">物流异常-停滞未更新-20251124</span>
@@ -170,6 +173,77 @@
     </div>
 
     <div class="flex flex-1 overflow-hidden relative">
+
+        <aside id="sidebar" class="sidebar w-64 bg-white border-r border-gray-200 flex flex-col z-10">
+            <div class="p-4 border-b border-gray-100 space-y-3">
+                <!-- 1. 审核状态 -->
+                <div>
+                    <label class="text-xs font-bold text-gray-500 block mb-1">审核状态</label>
+                    <select id="filterStatus" class="w-full h-8 border border-gray-300 rounded px-2 text-xs outline-none focus:border-blue-500 bg-white">
+                        <option value="all">全部场景</option>
+                        <option value="pending">待审核</option>
+                        <option value="reviewed">已审核</option>
+                    </select>
+                </div>
+                
+                <!-- 2. 搜索场景 -->
+                <div>
+                    <label class="text-xs font-bold text-gray-500 block mb-1">搜索场景</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-search absolute left-2.5 top-2 text-gray-400 text-xs"></i>
+                        <input id="searchScene" type="text" class="w-full h-8 border border-gray-300 rounded pl-8 pr-2 text-xs outline-none focus:border-blue-500" placeholder="输入关键字查找...">
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto">
+                <div class="group">
+                    <div class="px-4 py-2 bg-gray-50 text-xs font-bold text-gray-500 uppercase flex justify-between items-center sticky top-0 z-10 border-y border-gray-100">
+                        <span>物流异常列表</span>
+                        <div class="flex items-center gap-2 text-gray-400">
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </div>
+                    </div>
+                    
+                    <ul id="scenarioList" class="text-sm">
+                        <!-- 待审核 (Active) -->
+                        <li data-title="停滞未更新" data-status="pending" class="px-3 py-3 border-b border-gray-50 bg-blue-50 border-l-4 border-l-blue-500 flex items-start gap-2 cursor-pointer">
+                            <div class="mt-1 w-3 h-3 rounded-full bg-yellow-400 border border-yellow-500 flex-shrink-0"></div>
+                            <div class="flex-1">
+                                <div class="font-bold text-gray-900">停滞未更新</div>
+                                <div class="text-[10px] text-gray-400">更新时间: 2025-11-24 15:20</div>
+
+                                <div class="text-[10px] text-blue-600 bg-blue-100 inline-block px-1 rounded mt-1">版本 V0</div>
+                            </div>
+                        </li>
+
+                        <!-- 待审核：新增一条场景 -->
+                        <li data-title="签收异常未处理" data-status="pending" class="px-3 py-3 border-b border-gray-50 hover:bg-blue-50 flex items-start gap-2 cursor-pointer">
+                            <div class="mt-1 w-3 h-3 rounded-full bg-yellow-300 border border-yellow-400 flex-shrink-0"></div>
+                            <div class="flex-1">
+                                <div class="font-medium text-gray-900">签收异常未处理</div>
+                                <div class="text-[10px] text-gray-400">更新时间: 2025-11-23 18:05</div>
+                            </div>
+                        </li>
+
+                        <!-- 已审核放底部 -->
+                        <li data-title="已发车未到站" data-status="reviewed" class="px-3 py-3 border-b border-gray-50 hover:bg-gray-50 flex items-start gap-2 opacity-60">
+                            <i class="fa-solid fa-circle-check text-green-500 mt-1"></i>
+                            <div>
+                                <div class="text-gray-900 line-through decoration-gray-400">已发车未到站</div>
+                                <div class="text-[10px] text-gray-400">更新时间: 2025-11-01 10:20</div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="p-3 border-t border-gray-200 bg-gray-50 text-center">
+                <button id="btnBatchPass" class="w-full px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium shadow transition-transform active:scale-95 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed">
+                    <i class="fa-solid fa-check mr-2"></i> 校验通过
+                </button>
+            </div>
+        </aside>
 
         <main class="flex-1 flex flex-col relative min-w-0">
             <div class="absolute top-4 left-1/2 -translate-x-1/2 z-20 flex bg-white shadow rounded-lg border border-gray-200 p-1 text-xs">
@@ -264,10 +338,7 @@
                 <div class="text-xs text-gray-500">
                     上次更新: 2025-11-01 14:30 By yezitong.1
                 </div>
-                <button id="btnPassCurrent" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium shadow flex items-center gap-2 active:scale-95">
-                    <i class="fa-solid fa-check"></i>
-                    校验通过
-                </button>
+                
             </footer>
         </main>
 
@@ -412,15 +483,57 @@
             applyDiffMode();
         }
         function filterScenes() {
-            const s = document.getElementById('scenarioList');
-            if (!s) return;
+            const q = document.getElementById('searchScene').value.trim().toLowerCase();
+            const s = document.getElementById('filterStatus').value;
+            
+            document.querySelectorAll('#scenarioList li').forEach(li => {
+                const title = (li.dataset.title || '').toLowerCase();
+                const status = li.dataset.status || 'pending';
+                
+                const matchQ = !q || title.includes(q);
+                const matchS = s === 'all' || s === status;
+                
+                li.style.display = (matchQ && matchS) ? '' : 'none';
+            });
         }
         function passCurrentScenario() {
+            const list = document.getElementById('scenarioList');
+            if (!list) return;
+            let current = list.querySelector('li.bg-blue-50') || list.querySelector('li.border-l-blue-500') || list.querySelector('li[data-status="pending"]');
+            if (!current) return;
+            if (current.dataset.status === 'reviewed') {
+                const toast = document.createElement('div');
+                toast.className = 'fixed top-4 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded shadow-lg z-50 text-xs';
+                toast.textContent = '当前场景已是已审核状态';
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 2000);
+                return;
+            }
+            current.dataset.status = 'reviewed';
+            current.classList.remove('bg-blue-50','border-l-4','border-l-blue-500');
+            current.className = 'px-3 py-3 border-b border-gray-50 hover:bg-gray-50 flex items-start gap-2 opacity-60';
+            const icon = current.querySelector('.fa-circle-xmark, .w-3.h-3.rounded-full, .fa-circle-check');
+            if (icon) {
+                const newIcon = document.createElement('i');
+                newIcon.className = 'fa-solid fa-circle-check text-green-500 mt-1';
+                icon.replaceWith(newIcon);
+            }
+            const title = current.querySelector('.text-gray-900');
+            if (title) title.className = 'text-gray-900 line-through decoration-gray-400';
+            list.appendChild(current);
             const toast = document.createElement('div');
             toast.className = 'fixed top-4 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded shadow-lg z-50 text-xs';
-            toast.textContent = '已校验通过当前SOP';
+            toast.textContent = '已校验通过当前场景';
             document.body.appendChild(toast);
             setTimeout(() => toast.remove(), 2000);
+            const next = list.querySelector('li[data-status="pending"]');
+            document.querySelectorAll('#scenarioList li').forEach(li => {
+                li.classList.remove('bg-blue-50','border-l-4','border-l-blue-500');
+            });
+            if (next) {
+                next.classList.add('bg-blue-50','border-l-4','border-l-blue-500');
+            }
+            filterScenes();
         }
 
         function switchView(mode) {
@@ -579,8 +692,24 @@
             });
         }
         window.addEventListener('DOMContentLoaded',()=>{
-            const passBtn = document.getElementById('btnPassCurrent');
-            if (passBtn) passBtn.addEventListener('click', passCurrentScenario);
+            const s = document.getElementById('searchScene');
+            if (s) s.addEventListener('input', filterScenes);
+            const fs = document.getElementById('filterStatus');
+            if (fs) fs.addEventListener('change', filterScenes);
+            const bbp = document.getElementById('btnBatchPass');
+            if (bbp) bbp.addEventListener('click', passCurrentScenario);
+            
+            const list = document.getElementById('scenarioList');
+            if(list) {
+                list.addEventListener('click', (e) => {
+                    const li = e.target.closest('li');
+                    if(!li || li.dataset.status === 'reviewed') return;
+                    document.querySelectorAll('#scenarioList li').forEach(item => {
+                        item.classList.remove('bg-blue-50','border-l-4','border-l-blue-500');
+                    });
+                    li.classList.add('bg-blue-50','border-l-4','border-l-blue-500');
+                });
+            }
 
             const bg = document.getElementById('btnGraph');
             const bt = document.getElementById('btnText');
